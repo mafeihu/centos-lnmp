@@ -64,6 +64,11 @@ install_nginx(){
        echo -e "\033[42;37m nginx检测配置完成，进行安装..... \033[0m"
       [ $(echo $?) -eq 0 ] && make && make install
       [ $(echo $?) -eq 0 ] && echo -e "\033[42;37m nginx安装成功 \033[0m"
+
+      #配置环境变量
+      PATH=$PATH:/usr/local/nginx/bin/
+      echo "export PATH=$PATH:/usr/local/nginx/bin/" >>/etc/profile
+      source /etc/profile
     else
       echo -e "\033[36;41m nginx下载失败 \033[0m"
     fi
@@ -247,27 +252,17 @@ install_php(){
     fi
 }
 
+start_phpfpm(){
+  # start
+  /etc/init.d/php-fpm start
+  if [ $(netstat -lutnp|grep 9000|wc -l) -eq 1 ]
+    then
+      action "php-fpm starting success..." /bin/true
+  else
+      echo "php-fpm starting fail,plaese check the service!"
+  fi
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
 
 #main function
  main(){
@@ -309,6 +304,13 @@ install_php(){
     read -p " Do you want to install php: Y/N " MYSQLCONFIRM
     if [ "$MYSQLCONFIRM" = "Y" ] || [ "$MYSQLCONFIRM" = "y" ];then
           install_php
+    else
+        echo "=================== install the next thing =============="
+    fi
+    #install-phpfpm
+    read -p " Do you want to start php: Y/N " MYSQLCONFIRM
+    if [ "$MYSQLCONFIRM" = "Y" ] || [ "$MYSQLCONFIRM" = "y" ];then
+          start_phpfpm
     else
         echo "=================== install the next thing =============="
     fi
