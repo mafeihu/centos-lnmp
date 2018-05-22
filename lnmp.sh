@@ -15,13 +15,16 @@ nginx_download_path="http://nginx.org/download/nginx-1.12.0.tar.gz"
 nginx_install_dir="/usr/local/nginx"
 mysql_download_path="http://dev.mysql.com/get/Downloads/MySQL-5.6/mysql-5.6.16.tar.gz"
 mysql_install_dir="/usr/local/mysql"
-php_download_path="http://jp2.php.net/distributions/php-5.5.38.tar.gz"
+php_download_path="http://jp2.php.net/distributions/php-5.6.30.tar.gz"
 php_install_path="/usr/local/php"
+
+
+http://php.net/get/php-5.6.30.tar.gz/from/this/mirror
 
 #设置你要下载的相应的安装包
 nginx_name="nginx-1.12.0.tar.gz"
 mysql_name="mysql-5.6.16.tar.gz"
-php_name="php-5.5.38.tar.gz"
+php_name="php-5.6.30.tar.gz"
 
 #创建文件夹
 create_dir(){
@@ -77,7 +80,6 @@ start_nginx(){
         if [ $(netstat -lutnp|grep 80 |wc -l) -eq 1 ]
         then
             action "nginx starting success..."  /bin/true
-            echo -e "\033[42;37m nginx启动成功了 \033[0m"
         else
             echo -e "\033[36;41m nginx starting fail,plaese check the service！ \033[0m"
         fi
@@ -160,19 +162,131 @@ install_mysql(){
     fi
   fi
 }
+
+#start_mysql
+start_mysql(){
+  # start
+  /etc/init.d/mysqld start
+  if [ $(netstat -lutnp|grep 3306|wc -l) -eq 1 ]
+    then
+      action "mysql starting success..."  /bin/true
+  else
+      echo "mysql starting fail,plaese check the service!"
+  fi
+}
+
+#install_php
+install_php(){
+    # yum install something
+    yum install zlib-devel openssl-devel openssl libxml2-devel libjpeg-devel libjpeg-turbo-devel libiconv-devel freetype-devel libpng-devel gd-devel libcurl-devel libxslt-devel libxslt-devel libmcrypt-devel mcrypt mhash -y
+    #download php
+    if [ -e $dir ] && cd $dir
+        then
+        wget $php_download_path
+        if [ -f $php_name ]
+            then
+            echo -e "\033[42;37m php download success \033[0m"
+            # tar file
+            tar zxf $php_name  && cd php-5.6.30
+            echo -e "\033[42;37m Please hold on!The configure output message is so large so that I hide the output message!...\033[0m"
+            ./configure --prefix=/usr/local/php \
+            --with-config-file-path=/usr/local/php/etc \
+            --with-config-file-scan-dir=/usr/local/php/conf.d \
+            --with-mysql=/usr/local/mysql \
+            --with-mysqli=/usr/local/mysql/bin/mysql_config \
+            --with-pdo-mysql=mysqlnd \
+            --with-iconv-dir=/usr/local/libiconv \
+            --with-freetype-dir=/usr/local/freetype \
+            --disable-fileinfo \
+            --with-jpeg-dir \
+            --with-png-dir \
+            --with-zlib \
+            --with-libxml-dir=/usr \
+            --enable-xml \
+            --enable-bcmath \
+            --enable-shmop \
+            --enable-sysvsem \
+            --enable-inline-optimization \
+            --with-curl=/usr/local/curl \
+            --enable-mbregex \
+            --enable-fpm \
+            --enable-mbstring \
+            --with-mcrypt \
+            --enable-ftp \
+            --with-gd \
+            --enable-gd-native-ttf \
+            --with-mhash \
+            --enable-pcntl \
+            --enable-sockets \
+            --with-xmlrpc \
+            --enable-zip \
+            --enable-soap \
+            --with-gettext \
+            --enable-opcache=no >> /dev/null 2>&1
+            echo -e "\033[42;37m php install .......... \033[0m"
+            [ $(echo $?) -eq 0 ] && ln -s /usr/local/mysql/lib/libmysqlclient.so.18 /usr/lib64/ && touch ext/phar/phar.phar
+            make >> /dev/null 2>&1
+            make install
+            echo -e "\033[42;37m php install success\033[0m"
+
+            echo -e "\033[42;37m php will setting.......\033[0m"
+            cp php.ini-development /etc/php.ini
+            # copy php-fpm
+            cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf
+            cp sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm
+            # chmod +x
+            chmod +x /etc/init.d/php-fpm
+            # add to PATH
+            PATH=$PATH:/usr/local/php/bin/
+            echo "export PATH=$PATH:/usr/local/php/bin/" >>/etc/profile
+            source /etc/profile
+            # add to boot auto launch
+            chkconfig --add php-fpm
+            chkconfig php-fpm  on
+        fi
+    fi
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #main function
  main(){
     #create_dir
-    #create_dir
-
+    create_dir
     #install nginx
-    #start nginx
     read -p " Do you want to install nginx:Y/N " NGINXCONFIRM
     if [ "$NGINXCONFIRM" = "Y" ] || [ "$NGINXCONFIRM" = "y" ];then
             install nginx
-            start_nginx
     else
     echo "================== install the next thing============"
+    fi
+
+    #start nginx
+    read -p " Do you want to start nginx:Y/N " NGINXCONFIRM
+    if [ "$NGINXCONFIRM" = "Y" ] || [ "$NGINXCONFIRM" = "y" ];then
+            start_nginx
+    else
+    echo "================== run the next thing============"
     fi
 
     #install_mysql
@@ -181,6 +295,22 @@ install_mysql(){
             install_mysql
     else
     echo "=================== install the next thing =============="
+    fi
+
+    #start_mysql
+     read -p " Do you want to start mysql: Y/N " MYSQLCONFIRM
+    if [ "$MYSQLCONFIRM" = "Y" ] || [ "$MYSQLCONFIRM" = "y" ];then
+            start_mysql
+    else
+    echo "=================== run the next thing =============="
+    fi
+
+    #install_php
+    read -p " Do you want to install php: Y/N " MYSQLCONFIRM
+    if [ "$MYSQLCONFIRM" = "Y" ] || [ "$MYSQLCONFIRM" = "y" ];then
+          install_php
+    else
+        echo "=================== install the next thing =============="
     fi
  }
 main
