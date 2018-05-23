@@ -66,8 +66,8 @@ install_nginx(){
       [ $(echo $?) -eq 0 ] && echo -e "\033[42;37m nginx安装成功 \033[0m"
 
       #配置环境变量
-      PATH=$PATH:/usr/local/nginx/bin/
-      echo "export PATH=$PATH:/usr/local/nginx/bin/" >>/etc/profile
+      PATH=$PATH:/usr/local/nginx/sbin/
+      echo "export PATH=$PATH:/usr/local/nginx/sbin/" >>/etc/profile
       source /etc/profile
     else
       echo -e "\033[36;41m nginx下载失败 \033[0m"
@@ -156,6 +156,9 @@ install_mysql(){
       # mv my.cnf
      [ $(echo $?) -eq 0 ] && \cp support-files/my-default.cnf /etc/my.cnf
 
+     echo -e "\033[42;37m 配置mysql启动文件........ \033[0m"
+     # mv mysql.server
+     cp /usr/local/mysql/support-files/mysql.server /etc/init.d/mysqld
      chmod +x /etc/init.d/mysqld
      # add to boot auto launch
      chkconfig --add mysqld
@@ -271,7 +274,7 @@ start_phpfpm(){
     #install nginx
     read -p " Do you want to install nginx:Y/N " NGINXCONFIRM
     if [ "$NGINXCONFIRM" = "Y" ] || [ "$NGINXCONFIRM" = "y" ];then
-            install nginx
+            install_nginx
     else
     echo "================== install the next thing============"
     fi
